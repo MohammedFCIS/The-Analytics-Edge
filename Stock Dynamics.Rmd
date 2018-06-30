@@ -1,0 +1,115 @@
+---
+title: "Stock Dynamics"
+author: "Mohammed Ali"
+date: "June 30, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tibble)
+
+```
+
+#Introduction
+
+A stock market is where buyers and sellers trade shares of a company, and is one of the most popular ways for individuals and companies to invest money. The size of the world stock market  is now estimated to be in the trillions. The largest stock market in the world is the New York Stock Exchange (NYSE), located in New York City. About 2,800 companies are listed on the NSYE. In this problem, we'll look at the monthly stock prices of five of these companies: IBM, General Electric (GE), Procter and Gamble, Coca Cola, and Boeing. The data used in this problem comes from Infochimps.
+
+Call the data frames `IBM`, `GE`, `ProcterGamble`, `CocaCola`, and `Boeing`, respectively. Each data frame has two variables, described as follows:
+
+`Date`: the date of the stock price, always given as the first of the month.
+`StockPrice`: the average stock price of the company in the given month.
+In this problem, we'll take a look at how the stock dynamics of these companies have changed over time.
+
+```{r load_data}
+IBM <- as_tibble(read.csv("data/IBMStock.csv"))
+GE <- as_tibble(read.csv("data/GEStock.csv"))
+ProcterGamble <- as_tibble(read.csv("data/ProcterGambleStock.csv"))
+CocaCola <- as_tibble(read.csv("data/CocaColaStock.csv"))
+Boeing <- as_tibble(read.csv("data/BoeingStock.csv"))
+```
+
+# Summary Statistics
+
+Before working with these data sets, we need to convert the dates into a format that R can understand. Take a look at the structure of one of the datasets using the str function. Right now, the date variable is stored as a factor. We can convert this to a "Date" object in R by using the following five commands (one for each data set):
+
+```{r}
+IBM$Date = as.Date(IBM$Date, "%m/%d/%y")
+
+GE$Date = as.Date(GE$Date, "%m/%d/%y")
+
+CocaCola$Date = as.Date(CocaCola$Date, "%m/%d/%y")
+
+ProcterGamble$Date = as.Date(ProcterGamble$Date, "%m/%d/%y")
+
+Boeing$Date = as.Date(Boeing$Date, "%m/%d/%y")
+```
+
+Our five datasets all have the same number of observations. How many observations are there in each data set?
+```{r}
+nrow(IBM)
+```
+What is the earliest year in our datasets?
+
+```{r}
+summary(IBM$Date)
+```
+
+What is the mean stock price of IBM over this time period?
+```{r}
+summary(IBM$StockPrice)
+```
+
+What is the minimum stock price of General Electric (GE) over this time period?
+```{r}
+summary(GE$StockPrice)
+```
+
+What is the maximum stock price of Coca-Cola over this time period?
+```{r}
+summary(CocaCola$StockPrice)
+```
+
+What is the median stock price of Boeing over this time period?
+```{r}
+summary(Boeing$StockPrice)
+```
+
+What is the standard deviation of the stock price of Procter & Gamble over this time period?
+```{r}
+sd(ProcterGamble$StockPrice)
+```
+
+# Visualizing Stock Dynamics
+Which stock fell the most right after the technology bubble burst in March 2000?
+Which stock reaches the highest value in the time period 1995-2005?
+In October of 1997, there was a global stock market crash that was caused by an economic crisis in Asia. Comparing September 1997 to November 1997, which companies saw a decreasing trend in their stock price?
+In the last two years of this time period (2004 and 2005) which stock seems to be performing the best, in terms of increasing stock price?
+
+```{r}
+plot(CocaCola$Date[301:432], CocaCola$StockPrice[301:432], type="l", col="red", ylim=c(0,210))
+
+lines(ProcterGamble$Date[301:432], ProcterGamble$StockPrice[301:432], col="blue")
+
+lines(IBM$Date[301:432], IBM$StockPrice[301:432], col="green")
+
+lines(GE$Date[301:432], GE$StockPrice[301:432], col="purple")
+
+lines(Boeing$Date[301:432], Boeing$StockPrice[301:432], col="orange")
+abline(v=as.Date(c("2000-03-01")), lwd=2)
+abline(v=as.Date(c("1997-09-01")), lwd=2)
+abline(v=as.Date(c("1997-11-01")), lwd=2)
+```
+
+# Monthly Trends
+Lastly, let's see if stocks tend to be higher or lower during certain months.
+```{r}
+sort(tapply(IBM$StockPrice, months(IBM$Date), mean))
+#or
+IBM %>% mutate(month = months(Date)) %>% 
+        group_by(month) %>% 
+        summarise(mean = mean(StockPrice)) %>% 
+        arrange(desc(mean))
+```
+
