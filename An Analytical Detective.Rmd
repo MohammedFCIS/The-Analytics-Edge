@@ -1,0 +1,212 @@
+---
+title: "An Analytical Detective"
+author: "Mohammed Ali"
+date: "June 30, 2018"
+output: html_document
+---
+
+#An analytical detective
+Crime is an international concern, but it is documented and handled in very different ways in different countries. In the United States, violent crimes and property crimes are recorded by the Federal Bureau of Investigation (FBI).  Additionally, each city documents crime, and some cities release data regarding crime rates. The city of Chicago, Illinois releases crime data from 2001 onward
+
+Read the dataset mvtWeek1.csv into R, using the read.csv function, and call the data frame 'mvt'. Remember to navigate to the directory on your computer containing the file mvtWeek1.csv first. It may take a few minutes to read in the data, since it is pretty large. Then, use the str and summary functions to answer the following questions.
+```{r include=FALSE}
+library(dplyr)
+library(ggplot2)
+```
+
+## Loading the Data
+```{r}
+mvt <- read.csv("data/mvtWeek1.csv")
+```
+How many rows of data (observations) are in this dataset?
+```{r}
+nrow(mvt)  
+```
+
+How many variables are in this dataset?
+```{r}
+ncol(mvt)  
+```
+
+Using the "max" function, what is the maximum value of the variable "ID"?
+
+```{r}
+max(mvt$ID)
+```
+
+What is the minimum value of the variable "Beat"?
+```{r}
+min(mvt$Beat)  
+```
+
+How many observations have value TRUE in the Arrest variable (this is the number of crimes for which an arrest was made)?
+
+```{r}
+table(mvt$Arrest)
+```
+
+How many observations have a LocationDescription value of ALLEY?
+```{r}
+table(mvt$LocationDescription == "ALLEY")
+```
+
+## Understanding Dates in R
+In many datasets, like this one, you have a date field. Unfortunately, R does not automatically recognize entries that look like dates. We need to use a function in R to extract the date and time. Take a look at the first entry of Date (remember to use square brackets when looking at a certain entry of a variable).
+
+In what format are the entries in the variable Date?
+```{r}
+mvt$Date[1]
+```
+Now, let's convert these characters into a Date object in R. In your R console, type
+
+`DateConvert = as.Date(strptime(mvt$Date, "%m/%d/%y %H:%M"))`
+
+This converts the variable "Date" into a Date object in R. Take a look at the variable DateConvert using the summary function.
+
+What is the month and year of the median date in our dataset? Enter your answer as "Month Year", without the quotes. (Ex: if the answer was 2008-03-28, you would give the answer "March 2008", without the quotes.)
+
+```{r}
+DateConvert = as.Date(strptime(mvt$Date, "%m/%d/%y %H:%M"))
+summary(DateConvert)
+```
+
+Now, let's extract the month and the day of the week, and add these variables to our data frame mvt. We can do this with two simple functions. Type the following commands in R:
+
+`mvt$Month = months(DateConvert)`
+
+`mvt$Weekday = weekdays(DateConvert)`
+
+This creates two new variables in our data frame, Month and Weekday, and sets them equal to the month and weekday values that we can extract from the Date object. Lastly, replace the old Date variable with DateConvert by typing:
+
+`mvt$Date = DateConvert`
+
+Using the table command, answer the following questions.
+
+In which month did the fewest motor vehicle thefts occur?
+```{r}
+mvt$Month = months(DateConvert)
+mvt$Weekday = weekdays(DateConvert)
+mvt$Date = DateConvert
+
+sort(table(mvt$Month))
+  
+```
+On which weekday did the most motor vehicle thefts occur?
+
+```{r}
+sort(table(mvt$Weekday))
+```
+
+Each observation in the dataset represents a motor vehicle theft, and the Arrest variable indicates whether an arrest was later made for this theft. Which month has the largest number of motor vehicle thefts for which an arrest was made?
+
+```{r}
+mvt %>% filter(Arrest == TRUE) %>%
+        count(Month) %>% 
+        arrange(desc(n))
+```
+
+## Visualizing Crime Trends
+Now, let's make some plots to help us better understand how crime has changed over time in Chicago.
+In general, does it look like crime increases or decreases from 2002 - 2012?
+In general, does it look like crime increases or decreases from 2005 - 2008?
+In general, does it look like crime increases or decreases from 2009 - 2011?
+
+```{r}
+ggplot(mvt, aes(x=Date)) +
+  geom_histogram(binwidth = 100)
+```
+
+
+Now, let's see how arrests have changed over time.
+
+Does it look like there were more crimes for which arrests were made in the first half of the time period or the second half of the time period? (Note that the time period is from 2001 to 2012, so the middle of the time period is the beginning of 2007.)
+```{r}
+  ggplot(mvt, aes(x = Arrest, y = Date)) +
+    geom_boxplot()
+```
+
+## Popular Locations
+For what proportion of motor vehicle thefts in 2001 was an arrest made?
+
+
+```{r}
+  mvt %>% filter(Year == 2001) %>%  
+    group_by(Arrest, Year) %>% 
+    summarise(n = n()) %>% 
+    ungroup() %>% 
+    mutate(freq = n/sum(n))
+
+ggplot(mvt, aes(x=as.factor(Year))) +
+  geom_bar(aes(fill=Arrest,  y = (..count..)/sum(..count..)), position="dodge") 
+```
+
+For what proportion of motor vehicle thefts in 2007 was an arrest made?
+
+```{r}
+   mvt %>% filter(Year == 2007) %>%  
+    group_by(Arrest, Year) %>% 
+    summarise(n = n()) %>% 
+    ungroup() %>% 
+    mutate(freq = n/sum(n))
+```
+For what proportion of motor vehicle thefts in 2012 was an arrest made?
+
+```{r}
+    mvt %>% filter(Year == 2012) %>%  
+    group_by(Arrest, Year) %>% 
+    summarise(n = n()) %>% 
+    ungroup() %>% 
+    mutate(freq = n/sum(n))
+```
+
+Which locations are the top five locations for motor vehicle thefts, excluding the "Other" category? 
+```{r}
+  mvt %>% group_by(LocationDescription) %>% 
+          summarise(n = n()) %>% 
+          top_n(6, n) %>% 
+          arrange(desc(n))
+```
+
+Create a subset of your data, only taking observations for which the theft happened in one of these five locations, and call this new data set `Top5`.
+How many observations are in `Top5`?
+
+```{r}
+Top5Locations <-  mvt %>% 
+          group_by(LocationDescription) %>% 
+          filter(LocationDescription != "OTHER") %>% 
+          summarise(n = n()) %>% 
+          top_n(5, n) %>%
+          select(LocationDescription)
+
+Top5 <- mvt %>% 
+        filter(LocationDescription %in% Top5Locations$LocationDescription)
+Top5$LocationDescription <- factor(Top5Locations$LocationDescription)
+          
+```
+
+One of the locations has a much higher arrest rate than the other locations. Which is it? 
+```{r}
+Top5 %>% group_by( Arrest, LocationDescription) %>% 
+         summarise(n = n()) %>% 
+         ungroup() %>% 
+         mutate(freq = n/sum(n)) %>% 
+         arrange(desc(freq))
+```
+On which day of the week do the most motor vehicle thefts at gas stations happen?
+
+```{r}
+  Top5 %>% filter(LocationDescription=="GAS STATION") %>% 
+         group_by( Weekday) %>% 
+         summarise(n = n()) %>%  
+         arrange(desc(n))
+```
+
+On which day of the week do the fewest motor vehicle thefts in residential driveways happen?
+
+
+```{r}
+    Top5 %>% filter(LocationDescription=="DRIVEWAY - RESIDENTIAL") %>% 
+         group_by( Weekday) %>% 
+         summarise(n = n()) %>%  
+         arrange(desc(n))
+```
