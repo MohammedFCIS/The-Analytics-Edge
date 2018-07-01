@@ -1,0 +1,192 @@
+---
+title: "Demographics and Employment in the United States"
+author: "Mohammed Ali"
+date: "June 30, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+```
+
+#Loading and Summarizing the Dataset
+
+How many interviewees are in the dataset?
+
+```{r}
+CPS <- as_tibble(read.csv("ch1/data/CPSData.csv"))
+glimpse(CPS)
+
+```
+
+Among the interviewees with a value reported for the Industry variable, what is the most common industry of employment? 
+
+```{r }
+sort(table(CPS$Industry))
+```
+
+Which state has the fewest interviewees?
+Which state has the largest number of interviewees?
+
+
+```{r}
+sort(table(CPS$State))
+```
+
+What proportion of interviewees are citizens of the United States?
+```{r}
+Citizenship <- table(CPS$Citizenship)
+(Citizenship[1] + Citizenship[2])/nrow(CPS)
+```
+
+
+```{r}
+table(subset(CPS, Hispanic == 1)$Race)
+```
+
+# Evaluating Missing Values
+Which variables have at least one interviewee with a missing (NA) value?
+
+```{r}
+summary(CPS)
+```
+
+Often when evaluating a new dataset, we try to identify if there is a pattern in the missing values in the dataset. We will try to determine if there is a pattern in the missing values of the Married variable. The function `is.na(CPS$Married)` returns a vector of TRUE/FALSE values for whether the Married variable is missing. We can see the breakdown of whether Married is missing based on the reported value of the Region variable with the function `table(CPS$Region, is.na(CPS$Married))`. Which is the most accurate:
+
+```{r}
+table(CPS$Region, is.na(CPS$Married))
+
+table(CPS$Sex, is.na(CPS$Married))
+
+table(CPS$Age, is.na(CPS$Married))
+
+table(CPS$Citizenship, is.na(CPS$Married))
+```
+
+How many states had all interviewees living in a non-metropolitan area (aka they have a missing MetroAreaCode value)? For this question, treat the District of Columbia as a state (even though it is not technically a state).
+How many states had all interviewees living in a metropolitan area? Again, treat the District of Columbia as a state.
+
+
+
+```{r}
+table(CPS$State, is.na(CPS$MetroAreaCode))
+```
+
+Which region of the United States has the largest proportion of interviewees living in a non-metropolitan area?
+
+```{r}
+table(CPS$Region, is.na(CPS$MetroAreaCode))
+```
+
+Which state has a proportion of interviewees living in a non-metropolitan area closest to 30%?
+Which state has the largest proportion of non-metropolitan interviewees, ignoring states where all interviewees were non-metropolitan?
+
+```{r}
+sort(tapply(is.na(CPS$MetroAreaCode), CPS$State, mean))
+```
+
+# Integrating Metropolitan Area Data
+How many observations (codes for metropolitan areas) are there in MetroAreaMap?
+```{r}
+MetroAreaMap <- as_tibble(read.csv("ch1/data/MetroAreaCodes.csv"))
+glimpse(MetroAreaMap)
+```
+
+How many observations (codes for countries) are there in CountryMap?
+
+
+```{r}
+CountryMap <- as_tibble(read.csv("ch1/data/CountryCodes.csv"))
+glimpse(CountryMap)
+```
+
+To merge in the metropolitan areas, we want to connect the field MetroAreaCode from the CPS data frame with the field Code in MetroAreaMap. The following command merges the two data frames on these columns, overwriting the CPS data frame with the result:
+
+```{r}
+CPS = merge(CPS, MetroAreaMap, by.x="MetroAreaCode", by.y="Code", all.x=TRUE)
+```
+
+What is the name of the variable that was added to the data frame by the merge() operation?
+
+```{r}
+glimpse(CPS)
+```
+
+How many interviewees have a missing value for the new metropolitan area variable? 
+
+```{r}
+sum(is.na(CPS$MetroArea))
+```
+
+Which of the following metropolitan areas has the largest number of interviewees?
+```{r}
+sort(table(CPS$MetroArea), reverse = T)
+        
+```
+
+Which metropolitan area has the highest proportion of interviewees of Hispanic ethnicity?
+```{r}
+sort(tapply(CPS$Hispanic, CPS$MetroArea, mean))
+```
+
+ determine the number of metropolitan areas in the United States from which at least 20% of interviewees are Asian.
+```{r}
+sort(tapply(CPS$Race == "Asian", CPS$MetroArea, mean))
+```
+
+Normally, we would look at the sorted proportion of interviewees from each metropolitan area who have not received a high school diploma with the command:
+
+`sort(tapply(CPS$Education == "No high school diploma", CPS$MetroArea, mean))`
+
+However, none of the interviewees aged 14 and younger have an education value reported, so the mean value is reported as NA for each metropolitan area. To get mean (and related functions, like sum) to ignore missing values, you can pass the parameter na.rm=TRUE. Passing na.rm=TRUE to the tapply function, determine which metropolitan area has the smallest proportion of interviewees who have received no high school diploma.
+
+```{r}
+sort(tapply(CPS$Education == "No high school diploma", CPS$MetroArea, mean, na.rm=TRUE))
+```
+
+#Integrating Country of Birth Data
+Just as we did with the metropolitan area information, merge in the country of birth information from the CountryMap data frame, replacing the CPS data frame with the result. If you accidentally overwrite CPS with the wrong values, remember that you can restore it by re-loading the data frame from CPSData.csv and then merging in the metropolitan area information using the command provided in the previous subproblem.
+
+What is the name of the variable added to the CPS data frame by this merge operation?
+
+```{r}
+CPS = merge(CPS, CountryMap, by.x="CountryOfBirthCode", by.y="Code", all.x=TRUE)
+glimpse(CPS)
+```
+
+How many interviewees have a missing value for the new country of birth variable?
+
+
+```{r}
+summary(CPS$Country)
+```
+
+Among all interviewees born outside of North America, which country was the most common place of birth?
+
+
+
+```{r}
+sort(table(CPS$Country))
+```
+
+What proportion of the interviewees from the "New York-Northern New Jersey-Long Island, NY-NJ-PA" metropolitan area have a country of birth that is not the United States? For this computation, don't include people from this metropolitan area who have a missing country of birth.
+
+```{r}
+ table(CPS$MetroArea == "New York-Northern New Jersey-Long Island, NY-NJ-PA", CPS$Country != "United States")
+```
+
+Which metropolitan area has the largest number (note -- not proportion) of interviewees with a country of birth in India? 
+```{r}
+sort(tapply(CPS$Country == "India", CPS$MetroArea, sum, na.rm=TRUE))
+```
+
+In Brazil?
+```{r}
+sort(tapply(CPS$Country == "Brazil", CPS$MetroArea, sum, na.rm=TRUE))
+```
+
+In Somalia?
+```{r}
+sort(tapply(CPS$Country == "Somalia", CPS$MetroArea, sum, na.rm=TRUE))
+```
