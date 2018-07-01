@@ -1,0 +1,150 @@
+---
+title: "Internet Privacy Poll"
+author: "Mohammed Ali"
+date: "July 1, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(ggplot2)
+```
+
+# Loading and Summarizing the Dataset
+
+How many people participated in the poll?
+
+```{r}
+Poll <- as_tibble(read.csv("./data/AnonymityPoll.csv"))
+glimpse(Poll)
+```
+
+How many interviewees responded that they use a smartphone?
+How many interviewees responded that they don't use a smartphone?
+```{r}
+table(Poll$Smartphone)
+```
+
+How many interviewees did not respond to the question, resulting in a missing value, or NA, in the summary() output?
+
+```{r}
+summary(Poll$Smartphone)
+```
+
+Which of the following are states in the Midwest census region?
+Which was the state in the South census region with the largest number of interviewees?
+
+```{r}
+table( Poll$State, Poll$Region)
+```
+
+# Internet and Smartphone Users
+
+How many interviewees reported not having used the Internet and not having used a smartphone?
+How many interviewees reported having used the Internet and having used a smartphone?
+How many interviewees reported having used the Internet but not having used a smartphone?
+How many interviewees reported having used a smartphone but not having used the Internet?
+
+```{r}
+table(Poll$Smartphone, Poll$Internet.Use)
+```
+
+How many interviewees have a missing value for their Internet use?
+
+```{r}
+summary(Poll$Internet.Use)
+```
+
+How many interviewees have a missing value for their smartphone use?
+
+```{r}
+summary(Poll$Smartphone)
+```
+
+Use the subset function to obtain a data frame called `limited`, which is limited to interviewees who reported Internet use or who reported smartphone use. 
+
+How many interviewees are in the new data frame?
+
+```{r}
+limited <- Poll %>% filter(Smartphone == 1 | Internet.Use == 1)
+glimpse(limited)
+```
+
+# Summarizing Opinions about Internet Privacy
+
+Which variables have missing values in the limited data frame?
+
+```{r}
+summary(limited)
+```
+
+What is the average number of pieces of personal information on the Internet, according to the Info.On.Internet variable?
+
+```{r}
+summary(limited$Info.On.Internet)
+```
+
+How many interviewees reported a value of 0 for Info.On.Internet?
+How many interviewees reported the maximum value of 11 for Info.On.Internet?
+
+```{r}
+table(limited$Info.On.Internet)
+```
+
+What proportion of interviewees who answered the Worry.About.Info question worry about how much information is available about them on the Internet? 
+
+```{r}
+sum(limited$Worry.About.Info, na.rm = TRUE) / nrow(limited)
+```
+
+What proportion of interviewees who answered the Anonymity.Possible question think it is possible to be completely anonymous on the Internet?
+
+```{r}
+summary(limited$Anonymity.Possible)
+```
+
+What proportion of interviewees who answered the Tried.Masking.Identity question have tried masking their identity on the Internet?
+
+```{r}
+summary(limited$Tried.Masking.Identity)
+```
+
+What proportion of interviewees who answered the Privacy.Laws.Effective question find United States privacy laws effective?
+
+```{r}
+summary(limited$Privacy.Laws.Effective)
+```
+
+# Relating Demographics to Polling Results
+Often, we are interested in whether certain characteristics of interviewees (e.g. their age or political opinions) affect their opinions on the topic of the poll (in this case, opinions on privacy). In this section, we will investigate the relationship between the characteristics Age and Smartphone and outcome variables Info.On.Internet and Tried.Masking.Identity, again using the limited data frame we built in an earlier section of this problem.
+
+Build a histogram of the age of interviewees. What is the best represented age group in the population?
+
+```{r}
+ggplot(limited, aes(Age)) +
+  geom_histogram(binwidth = 5)
+```
+
+What is the largest number of interviewees that have exactly the same value in their Age variable AND the same value in their Info.On.Internet variable? 
+
+```{r}
+ggplot(limited, aes(x = Age, y = Info.On.Internet)) +
+  geom_point() + geom_jitterr()
+```
+
+What is the average Info.On.Internet value for smartphone users?
+What is the average Info.On.Internet value for non-smartphone users?
+
+```{r}
+tapply(limited$Info.On.Internet, limited$Smartphone, mean)
+```
+
+What proportion of smartphone users who answered the Tried.Masking.Identity question have tried masking their identity when using the Internet?
+
+What proportion of non-smartphone users who answered the Tried.Masking.Identity question have tried masking their identity when using the Internet?
+
+
+```{r}
+tapply(limited$Tried.Masking.Identity, limited$Smartphone, summary)
+```
