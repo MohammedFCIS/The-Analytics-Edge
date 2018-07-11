@@ -130,7 +130,7 @@ What is the largest number of interviewees that have exactly the same value in t
 
 ```{r}
 ggplot(limited, aes(x = Age, y = Info.On.Internet)) +
-  geom_point() + geom_jitterr()
+  geom_point()
 ```
 
 What is the average Info.On.Internet value for smartphone users?
