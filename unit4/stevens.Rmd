@@ -1,0 +1,47 @@
+---
+title: "CART in R"
+author: "Mohammed Ali"
+date: "July 9, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(caTools)
+library(rpart)
+library(rpart.plot)
+library(ROCR)
+```
+
+# Data Setup
+Read data and split it to train and test datasets
+```{r read}
+stevens <- read.csv("data/stevens.csv")
+glimpse(stevens)
+set.seed(3000)
+spl <- sample.split(stevens$Reverse, SplitRatio = 0.7)
+train <- subset(stevens, spl == TRUE)
+test <- subset(stevens, spl == FALSE)
+```
+
+# Model building
+
+```{r build_model}
+stevensTree <- rpart(data = train, Reverse ~ Circuit + Issue + Petitioner + Respondent + LowerCourt + Unconst, minbucket = 25, method = "class")
+prp(stevensTree)
+```
+
+# Prediction and Accuarcy Measure
+```{r predict}
+predictCart <- predict(stevensTree, newdata = test, type="class")
+table(test$Reverse, predictCart)
+```
+
+# Model Performance
+```{r performance}
+predictroc <- predict(stevensTree, newdata = test)
+pred <- prediction(predictroc[,2], test$Reverse)
+perf <- performance(pred, "tpr", "fpr")
+plot(perf)
+```
