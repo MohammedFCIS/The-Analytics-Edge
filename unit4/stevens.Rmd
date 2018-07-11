@@ -12,6 +12,7 @@ library(caTools)
 library(rpart)
 library(rpart.plot)
 library(ROCR)
+library(randomForest)
 ```
 
 # Data Setup
@@ -28,7 +29,7 @@ test <- subset(stevens, spl == FALSE)
 # Model building
 
 ```{r build_model}
-stevensTree <- rpart(data = train, Reverse ~ Circuit + Issue + Petitioner + Respondent + LowerCourt + Unconst, minbucket = 25, method = "class")
+stevensTree <- rpart(data = train, Reverse ~ Circuit + Issue + Petitioner + Respondent + LowerCourt + Unconst, minbucket = 5, method = "class")
 prp(stevensTree)
 ```
 
@@ -45,3 +46,19 @@ pred <- prediction(predictroc[,2], test$Reverse)
 perf <- performance(pred, "tpr", "fpr")
 plot(perf)
 ```
+
+# Compute the AUC
+```{r auc}
+as.numeric(performance(pred, "auc")@y.values)
+```
+
+# Random Forest
+```{r random_forest}
+train$Reverse = as.factor(train$Reverse)
+test$Reverse = as.factor(test$Reverse)
+stevensForest <- randomForest(Reverse ~ Circuit + Issue + Petitioner + Respondent + LowerCourt + Unconst, data = train, nodesize = 25, ntree = 200)
+predictForest <- predict(stevensForest, newdata = test)
+table(test$Reverse, predictForest)
+```
+
+
