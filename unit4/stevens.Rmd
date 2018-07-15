@@ -70,7 +70,7 @@ numFolds <- trainControl(method = "cv", number = 10)
 cpGrid <- expand.grid(.cp = seq(0.01, 0.5, 0.1))
 train(Reverse ~ Circuit + Issue + Petitioner + Respondent + LowerCourt + Unconst, data = train, method = "rpart",
       trControl = numFolds, tuneGrid = cpGrid)
-stevensTreeCV <- rpart(Reverse ~ Circuit + Issue + Petitioner + Respondent + LowerCourt + Unconst, data = train, method = class, cp = 0.11)
+stevensTreeCV <- rpart(Reverse ~ Circuit + Issue + Petitioner + Respondent + LowerCourt + Unconst, data = train, method = "class", cp = 0.11)
 predicateCV = predict(stevensTreeCV, newdata = test, type = "class")
 table(test$Reverse, predicateCV)
 
