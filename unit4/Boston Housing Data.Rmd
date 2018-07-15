@@ -1,0 +1,74 @@
+---
+title: "Boston Housing Data"
+author: "Mohammed Ali"
+date: "July 15, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(caTools)
+library(rpart)
+library(rpart.plot)
+library(ROCR)
+library(randomForest)
+library(caret)
+library(e1071)
+```
+
+# EDA
+
+## Read in data
+```{r}
+boston <- read.csv("data/boston.csv")
+glimpse(boston)
+```
+## Plot observations
+```{r}
+ggplot(boston, aes(x = LON, y = LAT)) +
+  geom_point()
+```
+
+## Tracts alongside the Charles River
+```{r}
+chas <- boston[boston$CHAS==1,c("LON", "LAT")]
+
+ggplot() +
+  geom_point(data = boston, aes(x = LON, y = LAT)) +
+  geom_point(data = chas, aes(x = LON, y = LAT), col="blue",shape = 0) 
+```
+
+## Plot MIT
+
+```{r}
+mit <- boston[boston$TRACT==3531,c("LON", "LAT")]
+
+ggplot() +
+  geom_point(data = boston, aes(x = LON, y = LAT)) +
+  geom_point(data = mit, aes(x = LON, y = LAT), col="red", size = 3, shape = 2) 
+```
+
+
+## Plot polution
+
+```{r}
+poll <- boston[boston$NOX>=0.55, c("LON", "LAT")]
+
+ggplot() +
+  geom_point(data = boston, aes(x = LON, y = LAT)) +
+  geom_point(data = poll, aes(x = LON, y = LAT), col="red", size = 2, shape = 2)  
+```
+
+## Plot prices
+
+```{r}
+prices <- boston[boston$MEDV>=21.2,  c("LON", "LAT")]
+
+ggplot() +
+  geom_point(data = boston, aes(x = LON, y = LAT)) +
+  geom_point(data = prices, aes(x = LON, y = LAT), col="green", size = 2, shape = 3) 
+```
+
+
+

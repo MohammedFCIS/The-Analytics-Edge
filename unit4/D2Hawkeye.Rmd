@@ -16,7 +16,7 @@ library(caret)
 library(e1071)
 ```
 
-#Data Setup
+# Data Setup
 
 Read data and split it to train and test datasets
 
