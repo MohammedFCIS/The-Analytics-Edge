@@ -126,3 +126,76 @@ points(boston$LON[boston$MEDV>=21.2], boston$LAT[boston$MEDV>=21.2], col="red", 
 ```
 
 
+# Let's use all the variables
+
+## Split the data
+```{r}
+set.seed(123)
+split = sample.split(boston$MEDV, SplitRatio = 0.7)
+train = subset(boston, split==TRUE)
+test = subset(boston, split==FALSE)
+```
+
+## Create linear regression
+```{r}
+linreg = lm(MEDV ~ LAT + LON + CRIM + ZN + INDUS + CHAS + NOX + RM + AGE + DIS + RAD + TAX + PTRATIO, data=train)
+summary(linreg)
+```
+
+## Make predictions
+```{r}
+linreg.pred = predict(linreg, newdata=test)
+linreg.sse = sum((linreg.pred - test$MEDV)^2)
+linreg.sse
+```
+
+## Create a CART model
+```{r}
+tree = rpart(MEDV ~ LAT + LON + CRIM + ZN + INDUS + CHAS + NOX + RM + AGE + DIS + RAD + TAX + PTRATIO, data=train)
+prp(tree)
+```
+
+## Make predictions
+```{r}
+tree.pred = predict(tree, newdata=test)
+tree.sse = sum((tree.pred - test$MEDV)^2)
+tree.sse
+```
+
+
+# Cross Validation
+
+## Number of folds
+```{r}
+tr.control = trainControl(method = "cv", number = 10)
+```
+
+## cp values
+```{r}
+cp.grid = expand.grid( .cp = (0:10)*0.001)
+```
+
+### What did we just do?
+`1*0.001` 
+`10*0.001`
+`0:10`
+`0:10 * 0.001`
+
+
+## Cross-validation
+```{r}
+tr = train(MEDV ~ LAT + LON + CRIM + ZN + INDUS + CHAS + NOX + RM + AGE + DIS + RAD + TAX + PTRATIO, data = train, method = "rpart", trControl = tr.control, tuneGrid = cp.grid)
+```
+
+## Extract tree
+```{r}
+best.tree = tr$finalModel
+prp(best.tree)
+```
+
+## Make predictions
+```{r}
+best.tree.pred = predict(best.tree, newdata=test)
+best.tree.sse = sum((best.tree.pred - test$MEDV)^2)
+best.tree.sse
+```
