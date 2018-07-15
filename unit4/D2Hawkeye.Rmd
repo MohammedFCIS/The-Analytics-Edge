@@ -6,25 +6,142 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(caTools)
+library(rpart)
+library(rpart.plot)
+library(ROCR)
+library(randomForest)
+library(caret)
+library(e1071)
 ```
 
-## R Markdown
+#Data Setup
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+Read data and split it to train and test datasets
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r load_Data}
+Claims <- read.csv("data/ClaimsData.csv")
+glimpse(Claims)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
+Now let us see the percentage of patients in each cost bucket
 
 ```{r pressure, echo=FALSE}
-plot(pressure)
+table(Claims$bucket2009)/nrow(Claims)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+Split the data
+
+```{r split_data}
+set.seed(88)
+
+spl <- sample.split(Claims$bucket2009, SplitRatio = 0.6)
+
+ClaimsTrain <- subset(Claims, spl==TRUE)
+
+ClaimsTest <- subset(Claims, spl==FALSE)
+```
+
+let us do some investigations
+
+What is the average age of patients in the training set, ClaimsTrain?
+
+```{r}
+mean(ClaimsTrain$age)
+```
+
+
+What proportion of people in the training set (ClaimsTrain) had at least one diagnosis code for diabetes?
+```{r}
+table(ClaimsTrain$diabetes)["1"] / nrow(ClaimsTrain)
+```
+
+# Baseline Method and Penalty Matrix
+
+Baseline method is to predicat that the predicated values for 2009 are the same as 2008
+
+```{r}
+table(ClaimsTest$bucket2009, ClaimsTest$bucket2008)
+
+(110138 + 10721 + 2774 + 1539 + 104)/nrow(ClaimsTest)
+```
+
+Penalty Matrix
+
+```{r}
+PenaltyMatrix = matrix(c(0,1,2,3,4,2,0,1,2,3,4,2,0,1,2,6,4,2,0,1,8,6,4,2,0), byrow=TRUE, nrow=5)
+
+PenaltyMatrix
+```
+
+Penalty Error of Baseline Method
+```{r}
+as.matrix(table(ClaimsTest$bucket2009, ClaimsTest$bucket2008))*PenaltyMatrix
+
+sum(as.matrix(table(ClaimsTest$bucket2009, ClaimsTest$bucket2008))*PenaltyMatrix)/nrow(ClaimsTest)
+```
+
+Suppose that instead of the baseline method discussed above, we used the baseline method of predicting the most frequent outcome for all observations. This new baseline method would predict cost bucket 1 for everyone.
+
+What would the accuracy of this baseline method be on the test set?
+
+To compute the accuracy, you can create a table of the variable `ClaimsTest$bucket2009`
+
+According to the table output, this baseline method would get 122978 observations correct, and all other observations wrong. So the accuracy of this baseline method is: 
+
+```{r}
+table(ClaimsTest$bucket2009)["1"]/nrow(ClaimsTest)
+```
+
+What would the penalty error of this baseline method be on the test set?
+
+For the penalty error, since this baseline method predicts 1 for all observations, it would have a penalty error of:
+
+```{r}
+sum(table(ClaimsTest$bucket2009) * c(0, 2, 4, 6, 8))/nrow(ClaimsTest)
+```
+
+# Predicting Healthcare Costs 
+
+## CART model
+```{r}
+ClaimsTree <- rpart(bucket2009 ~ age + alzheimers + arthritis + cancer + copd + depression + diabetes + heart.failure + ihd + kidney + osteoporosis + stroke + bucket2008 + reimbursement2008, data=ClaimsTrain, method="class", cp=0.00005)
+prp(ClaimsTree)
+```
+
+## Make predictions
+```{r}
+PredictTest <- predict(ClaimsTree, newdata = ClaimsTest, type = "class")
+
+table(ClaimsTest$bucket2009, PredictTest)
+
+(114141 + 16102 + 118 + 201 + 0)/nrow(ClaimsTest)
+```
+
+
+## Penalty Error
+
+```{r}
+as.matrix(table(ClaimsTest$bucket2009, PredictTest))*PenaltyMatrix
+
+sum(as.matrix(table(ClaimsTest$bucket2009, PredictTest))*PenaltyMatrix)/nrow(ClaimsTest)
+```
+
+
+## New CART model with loss matrix
+```{r}
+ClaimsTree <- rpart(bucket2009 ~ age + alzheimers + arthritis + cancer + copd + depression + diabetes + heart.failure + ihd + kidney + osteoporosis + stroke + bucket2008 + reimbursement2008, data=ClaimsTrain, method="class", cp=0.00005, parms=list(loss=PenaltyMatrix))
+```
+
+## Redo predictions and penalty error
+```{r}
+PredictTest = predict(ClaimsTree, newdata = ClaimsTest, type = "class")
+
+table(ClaimsTest$bucket2009, PredictTest)
+
+(94310 + 18942 + 4692 + 636 + 2)/nrow(ClaimsTest)
+
+sum(as.matrix(table(ClaimsTest$bucket2009, PredictTest))*PenaltyMatrix)/nrow(ClaimsTest)
+```
