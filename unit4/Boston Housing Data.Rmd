@@ -71,4 +71,23 @@ ggplot() +
 ```
 
 
+# Linear Regression using LAT and LON
+```{r}
+plot(boston$LAT, boston$MEDV)
+plot(boston$LON, boston$MEDV)
+latlonlm = lm(MEDV ~ LAT + LON, data=boston)
+summary(latlonlm)
+```
+
+## Visualize regression output
+```{r}
+plot(boston$LON, boston$LAT)
+points(boston$LON[boston$MEDV>=21.2], boston$LAT[boston$MEDV>=21.2], col="red", pch=20)
+
+latlonlm$fitted.values
+points(boston$LON[latlonlm$fitted.values >= 21.2], boston$LAT[latlonlm$fitted.values >= 21.2], col="blue", pch="$")
+```
+
+
+
 
