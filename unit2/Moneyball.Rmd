@@ -43,3 +43,11 @@ WinsReg = lm(W ~ RD, data=moneyball)
 summary(WinsReg)
 ```
 
+# Regression model to predict runs scored
+```{r}
+RunsReg = lm(RS ~ OBP + SLG + BA, data=moneyball)
+summary(RunsReg)
+
+RunsReg = lm(RS ~ OBP + SLG, data=moneyball)
+summary(RunsReg)
+```
