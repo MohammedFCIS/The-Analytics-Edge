@@ -78,3 +78,25 @@ cor(wine)
 model5 <- lm(Price ~ AGST + HarvestRain + WinterRain, data=wine)
 summary(model5)
 ```
+
+# Prediction
+
+## Read in test set
+```{r}
+wineTest <- read.csv("data/wine_test.csv")
+glimpse(wineTest)
+```
+
+## Make test set predictions
+```{r}
+predictTest <- predict(model4, newdata=wineTest)
+predictTest
+```
+
+## Compute R-squared
+```{r}
+SSE <- sum((wineTest$Price - predictTest)^2)
+SST <- sum((wineTest$Price - mean(wine$Price))^2)
+1 - SSE/SST
+```
+
