@@ -60,3 +60,9 @@ SSE <- sum(model3$residuals^2)
 SSE
 ```
 
+# Remove FrancePop
+```{r}
+model4 <- lm(Price ~ AGST + HarvestRain + WinterRain + Age, data=wine)
+summary(model4)
+```
+
