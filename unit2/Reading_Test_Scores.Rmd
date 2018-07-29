@@ -1,0 +1,140 @@
+---
+title: "Reading Test Scores"
+author: "Mohammed Ali"
+date: "July 29, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+# Problem 1
+## Dataset size
+Load the training and testing sets using the `read.csv()` function, and save them as variables with the names `pisaTrain` and `pisaTest`.
+
+How many students are there in the training set? `3,663`
+
+```{r}
+pisaTrain <- read.csv("data/pisa2009train.csv")
+pisaTest <- read.csv("data/pisa2009test.csv")
+glimpse(pisaTrain)
+```
+
+## Summarizing the dataset
+what is the average reading test score of males?
+
+```{r}
+pisaTrain %>% select(male, readingScore) %>%
+              group_by(male) %>% 
+              summarise(mean = mean(readingScore))
+```
+
+## Locating missing values
+Which variables are missing data in at least one observation in the training set? Select all that apply.
+
+```{r}
+summary(pisaTrain)
+```
+
+
+```{r}
+```
+
+
+```{r}
+```
+## Removing missing values
+
+Linear regression discards observations with missing data, so we will remove all such observations from the training and testing sets. Later in the course, we will learn about imputation, which deals with missing data by filling in missing values with plausible information.
+
+```{r}
+pisaTrain <- na.omit(pisaTrain)
+
+pisaTest <- na.omit(pisaTest)
+```
+
+How many observations are now in the training set?
+```{r}
+nrow(pisaTrain)
+```
+
+How many observations are now in the testing set?
+
+```{r}
+nrow(pisaTest)
+```
+
+
+# Problem 2
+## Factor variables
+
+* Which of the following variables is an unordered factor with at least 3 levels? (Select all that apply.)
+* Which of the following variables is an ordered factor with at least 3 levels? (Select all that apply.)
+```{r}
+levels(as.factor(pisaTrain$grade))
+levels(as.factor(pisaTrain$male))
+levels(as.factor(pisaTrain$raceeth))
+```
+
+# Building a model
+```{r}
+pisaTrain$raceeth <- relevel(pisaTrain$raceeth, "White")
+pisaTest$raceeth <- relevel(pisaTest$raceeth, "White")
+```
+
+```{r}
+lmScore <- lm(readingScore ~ ., data = pisaTrain)
+summary(lmScore)
+```
+
+## Computing the root-mean squared error of the model
+
+```{r}
+#The training-set RMSE can be computed by first computing the SSE:
+
+SSE <- sum(lmScore$residuals^2)
+
+#and then dividing by the number of observations and taking the square root:
+
+RMSE <- sqrt(SSE / nrow(pisaTrain))
+
+#A alternative way of getting this answer would be with the following command:
+
+sqrt(mean(lmScore$residuals^2))
+```
+
+## Predicting on unseen data
+
+What is the range between the maximum and minimum predicted reading score on the test set?
+
+```{r}
+predTest <- predict(lmScore, newdata=pisaTest)
+summary(predTest)
+```
+## Test set SSE and RMSE
+What is the sum of squared errors (SSE) of lmScore on the testing set?
+What is the root-mean squared error (RMSE) of lmScore on the testing set?
+
+```{r}
+sse <- sum((predTest-pisaTest$readingScore)^2)
+sse
+sqrt(mean((predTest-pisaTest$readingScore)^2))
+```
+
+## Baseline prediction and test-set SSE
+
+```{r}
+baseline <- mean(pisaTrain$readingScore)
+baseline
+sst <- sum((baseline-pisaTest$readingScore)^2)
+sst
+```
+
+## Test-set R-squared
+
+```{r}
+1 - (sse/sst)
+```
+
