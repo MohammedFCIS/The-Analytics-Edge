@@ -1,0 +1,45 @@
+---
+title: "Moneyball"
+author: "Mohammed Ali"
+date: "July 29, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+# Making it to the Playoffs
+
+## Read in data
+```{r}
+baseball <- read.csv("data/baseball.csv")
+glimpse(baseball)
+```
+
+
+## Subset to only include moneyball years
+```{r}
+moneyball <- subset(baseball, Year < 2002)
+glimpse(moneyball)
+```
+
+
+## Compute Run Difference
+```{r}
+moneyball$RD <- moneyball$RS - moneyball$RA
+glimpse(moneyball)
+```
+
+## Scatterplot to check for linear relationship
+```{r}
+plot(moneyball$RD, moneyball$W)
+```
+
+# Regression model to predict wins
+```{r}
+WinsReg = lm(W ~ RD, data=moneyball)
+summary(WinsReg)
+```
+
